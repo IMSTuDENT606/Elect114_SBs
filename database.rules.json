@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "election": {
+      "activeRoundId": { ".read": true },
+      "rounds": {
+        "$roundId": {
+          "public": {
+            "schedule": { ".read": true },
+            "manualClosed": { ".read": true },
+            "candidates": { ".read": true }
+          },
+          "tallies": {
+            ".read": "data.parent().child('public/schedule/publish').isNumber() && data.parent().child('public/schedule/publish').val() <= now && (data.parent().child('public/manualClosed').val() === true || (data.parent().child('public/schedule/close').isNumber() && data.parent().child('public/schedule/close').val() <= now))"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a081b">
+  <title>ใช้สิทธิ์เลือกตั้งประธานรุ่น 2569 · ORACLE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Chonburi&family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@400;700&family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="election.css?v=13">
+  <link rel="stylesheet" href="results.css?v=39">
+  <script src="results.js?v=29" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-auth-compat.js" defer></script>
+  <script src="firebase-config.js" defer></script>
+  <script src="server-config.js?v=2" defer></script>
+  <script src="election-api.js?v=3" defer></script>
+  <script src="script.js?v=39" defer></script>
+</head>
+<body class="voting-page">
+  <div class="starfield" aria-hidden="true"></div>
+  <nav class="topbar" aria-label="เมนูหลัก">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">☾</span><span>ORACLE <small>THE ELECTION · 2569</small></span></a>
+    <a class="admin-link" href="index.html#vote">กลับหน้าแรก</a>
+  </nav>
+  <main class="voting-main">
+    <header class="voting-heading">
+      <h1>ใช้สิทธิ์เลือกตั้ง</h1>
+      <p>เลือกตั้งประธานรุ่น ปีการศึกษา 2569</p>
+    </header>
+    <div id="electionContent" class="election-content">
+      <noscript>เปิดใช้งาน JavaScript เพื่อเข้าสู่ระบบเลือกตั้ง</noscript>
+    </div>
+  </main>
+  <footer><a class="footer-brand" href="index.html">☾ ORACLE</a><span>ระบบเลือกตั้งประธานรุ่น ปีการศึกษา 2569</span></footer>
+</body>
+</html>

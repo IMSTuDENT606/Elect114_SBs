@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a081b" />
+  <meta name="description" content="ระบบเลือกตั้งประธานรุ่น ปีการศึกษา 2569 — เปิดไพ่แห่งอนาคต ด้วยเสียงของคุณ" />
+  <title>เปิดดวงอนาคต — เลือกตั้งประธานรุ่น 2569</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Chonburi&family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Serif+Display&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="election.css?v=13" />
+  <link rel="stylesheet" href="admin.css?v=10" />
+</head>
+<body>
+  <div class="starfield home-cosmos" aria-hidden="true">
+    <div class="cosmic-nebula"></div>
+    <div class="zodiac-wheel"><span>✦</span><i>☽</i></div>
+    <div class="meteor-shower">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+  <nav class="topbar"><a class="brand" href="#home"><span class="brand-mark">☾</span><span>ORACLE <small>THE ELECTION · 2569</small></span></a><div class="navlinks"><a href="#vote">เปิดคำทำนาย</a><a href="#results">ผลแห่งดวงดาว</a><button id="adminOpen" class="admin-link">ผู้ดูแลระบบ <span>✧</span></button></div></nav>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow"><span>✦</span> STUDENT COUNCIL · ACADEMIC YEAR 2569</p><p class="hero-pretitle">ค่ำคืนนี้ ดวงดาวมีเรื่องจะบอก</p><h1>เปิดไพ่<br><em>เลือกอนาคต</em></h1><p class="lead">หนึ่งเสียงของคุณ คือพลังที่พลิกคำทำนาย<br>และกำหนดเส้นทางบทต่อไปของพวกเรา</p><a class="hero-cta" href="#vote"><span>เปิดคำทำนายของคุณ</span><b>↓</b></a><div class="hero-meta"><span class="meta-star">✧</span><span>ระบบเลือกตั้งประธานรุ่น<br><b>ปีการศึกษา ๒๕๖๙</b></span></div></div>
+      <div class="hero-visual" aria-hidden="true"><div class="halo halo-one"></div><div class="halo halo-two"></div><div class="moon">☾</div><div class="tarot tarot-back"><span>✦</span><i>☼</i><b>✧</b></div><div class="tarot tarot-front"><span class="card-top">XVII</span><i>✧</i><b>THE STAR</b><small>✦ · ☾ · ✦</small></div><span class="orbit-star os-one">✦</span><span class="orbit-star os-two">✧</span><span class="orbit-star os-three">·</span><span class="orbit-star os-four">✦</span></div>
+    </section>
+
+    <div class="celestial-divider" aria-hidden="true">
+      <span class="divider-trail"></span>
+      <span class="divider-emblem">✦</span>
+      <span class="divider-trail"></span>
+    </div>
+
+    <section id="vote" class="vote-section">
+      <div class="election-heading"><span class="section-number">I</span><div><p class="eyebrow">THE MOMENT OF CHOICE</p><h2>เลือกตั้งประธานรุ่น<br><em>หนึ่งสิทธิ · หนึ่งเสียง</em></h2><p>ตรวจสอบสิทธิ ทำความรู้จักผู้สมัคร แล้วเข้าสู่คูหา</p></div><div class="heading-sigil" aria-hidden="true">☼</div></div>
+      <div class="election-gateway">
+        <a class="planet-link" href="vote.html" aria-describedby="gatewayStatus">
+          <span class="voting-planet">
+            <span class="planet-globe" aria-hidden="true"></span>
+            <span class="planet-orbit planet-orbit-inner" aria-hidden="true"><i></i></span>
+            <span class="planet-orbit planet-orbit-outer" aria-hidden="true"><i></i></span>
+            <span class="planet-orbit planet-orbit-crossing" aria-hidden="true"><i></i></span>
+            <span class="planet-label">ใช้สิทธิ์เลือกตั้ง</span>
+          </span>
+        </a>
+        <p id="gatewayStatus" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <div class="celestial-divider celestial-divider--eclipse" aria-hidden="true">
+      <span class="divider-trail"></span>
+      <span class="divider-emblem">☾</span>
+      <span class="divider-trail"></span>
+    </div>
+
+    <section id="results" class="results-section">
+      <div class="results-layout"><div class="results-intro"><span class="section-number">II</span><p class="eyebrow">THE STARS WILL TELL</p><h2>คำตอบจาก<br><em>เสียงของเรา</em></h2><p id="electionStatus">การเลือกตั้งยังไม่เปิด — โปรดติดตามประกาศจากโรงเรียน</p><div class="result-caption"><span>✦</span> ผลคะแนนจะแสดงที่นี่หลังเปิดดูผ่านปุ่มเลือกตั้ง</div></div>
+        <article class="result-panel"><div class="panel-top"><span class="status-mark"><span class="live-dot"></span><span id="statusLabel">รอเปิดการเลือกตั้ง</span></span><span class="refresh">บันทึกแห่งดวงดาว <b>2569</b></span></div><div id="resultContent" class="result-content"><div class="waiting-icon">☾</div><p class="result-kicker">THE PROPHECY IS WAITING</p><h3>รอเวลาเปิดม่านฟ้า</h3><p>เมื่อถึงเวลาการเลือกตั้ง<br>ผลคะแนนและผู้ชนะจะปรากฏที่นี่</p><a class="small-action result-vote-link" href="vote.html">ไปใช้สิทธิเลือกตั้ง</a></div><div class="panel-bottom"><span>✧ ORACLE ELECTION 2569</span><span>ทุกเสียงมีความหมาย</span></div></article>
+      </div>
+    </section>
+  </main>
+
+  <footer><a class="footer-brand" href="#home">☾ ORACLE</a><span>ระบบเลือกตั้งประธานรุ่น ปีการศึกษา 2569</span><span>สร้างสรรค์โดย <b>MJ.CODEX</b></span></footer>
+
+  <dialog id="adminDialog" class="app-dialog admin-dialog"><button class="close" data-close="adminDialog" aria-label="ปิด">×</button><div id="adminApp"></div></dialog>
+  <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="server-config.js?v=2"></script>
+  <script src="election-api.js?v=3"></script>
+  <script src="cloud-admin.js?v=6"></script>
+  <script src="script.js?v=39"></script>
+</body>
+</html>

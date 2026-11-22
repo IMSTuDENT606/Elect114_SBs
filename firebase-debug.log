@@ -1,0 +1,67 @@
+[debug] [2026-11-21T13:23:38.782Z] ----------------------------------------------------------------------
+[debug] [2026-11-21T13:23:38.823Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login:list
+[debug] [2026-11-21T13:23:38.824Z] CLI Version:   15.8.0
+[debug] [2026-11-21T13:23:38.825Z] Platform:      win32
+[debug] [2026-11-21T13:23:38.825Z] Node Version:  v24.14.0
+[debug] [2026-11-21T13:23:38.825Z] Time:          Sat Nov 21 2026 20:23:38 GMT+0700 (เวลาอินโดจีน)
+[debug] [2026-11-21T13:23:38.827Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-21T13:23:38.832Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] Logged in as student6744319@sing.ac.th
+[debug] [2026-11-21T13:25:37.424Z] ----------------------------------------------------------------------
+[debug] [2026-11-21T13:25:37.432Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:list --non-interactive
+[debug] [2026-11-21T13:25:37.433Z] CLI Version:   15.8.0
+[debug] [2026-11-21T13:25:37.433Z] Platform:      win32
+[debug] [2026-11-21T13:25:37.433Z] Node Version:  v24.14.0
+[debug] [2026-11-21T13:25:37.434Z] Time:          Sat Nov 21 2026 20:25:37 GMT+0700 (เวลาอินโดจีน)
+[debug] [2026-11-21T13:25:37.434Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-21T13:25:37.440Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-11-21T13:25:38.052Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-21T13:25:38.062Z] > authorizing via signed-in user (student6744319@sing.ac.th)
+[debug] [2026-11-21T13:25:38.073Z] Checked if tokens are valid: false, expires at: 1772694986217
+[debug] [2026-11-21T13:25:38.074Z] Checked if tokens are valid: false, expires at: 1772694986217
+[debug] [2026-11-21T13:25:38.075Z] > refreshing access token with scopes: []
+[debug] [2026-11-21T13:25:38.121Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-21T13:25:38.121Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-21T13:25:38.820Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-11-21T13:25:38.821Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-21T13:25:38.822Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-11-21T13:25:39.082Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-11-21T13:25:39.083Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-11-21T13:25:39.237Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2026-11-21T13:25:39.237Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-11-21T13:25:39.237Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-11-21T13:25:39.238Z] Checked if tokens are valid: false, expires at: 1772694986217
+[debug] [2026-11-21T13:25:39.239Z] Checked if tokens are valid: false, expires at: 1772694986217
+[debug] [2026-11-21T13:25:39.239Z] > refreshing access token with scopes: []
+[debug] [2026-11-21T13:25:39.241Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-21T13:25:39.242Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-21T13:25:39.324Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-11-21T13:25:39.325Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-21T13:25:39.327Z] Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-11-21T13:25:39.475Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at responseToError (C:\Users\Acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\Acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:330:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-11-21T13:26:03.053Z] ----------------------------------------------------------------------
+[debug] [2026-11-21T13:26:03.086Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login --reauth
+[debug] [2026-11-21T13:26:03.088Z] CLI Version:   15.8.0
+[debug] [2026-11-21T13:26:03.088Z] Platform:      win32
+[debug] [2026-11-21T13:26:03.089Z] Node Version:  v24.14.0
+[debug] [2026-11-21T13:26:03.089Z] Time:          Sat Nov 21 2026 20:26:03 GMT+0700 (เวลาอินโดจีน)
+[debug] [2026-11-21T13:26:03.091Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=612332552&redirect_uri=http%3A%2F%2Flocalhost%3A9005&login_hint=student6744319%40sing.ac.th
+[info] 
+[info] Waiting for authentication...
+[debug] [2026-11-21T13:27:08.710Z] >>> [apiv2][query] POST https://accounts.google.com/o/oauth2/token [none]
+[debug] [2026-11-21T13:27:08.729Z] >>> [apiv2][body] POST https://accounts.google.com/o/oauth2/token [omitted]
+[debug] [2026-11-21T13:27:09.174Z] <<< [apiv2][status] POST https://accounts.google.com/o/oauth2/token 200
+[debug] [2026-11-21T13:27:09.175Z] <<< [apiv2][body] POST https://accounts.google.com/o/oauth2/token [omitted]
+[info] 
+[info] +  Success! Logged in as student6744319@sing.ac.th 

@@ -1,0 +1,8 @@
+/voters.private.json
+/voters-import.private.json
+/election.private.sqlite*
+/voters.private.sqlite*
+/initial-roster.js
+/initial-roster.js.tmp
+/functions/node_modules/
+/firebase-debug.log
