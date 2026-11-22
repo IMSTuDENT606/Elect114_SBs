@@ -656,12 +656,14 @@ function applyResultCutouts(container) {
   const images = Array.from(container.querySelectorAll('.result-portrait img'), (image) => {
     const portrait = image.closest('.result-portrait');
     const originalPhotoId = portrait.dataset.originalPhoto;
-    const preview = image.src;
+    const preview = image.dataset.electionPhoto || image.src;
     return {image, portrait, originalPhotoId, preview, key: originalPhotoId || preview, large: Boolean(portrait.closest('.winner-stage'))};
   });
   const largePortraits = new Set(images.filter(({large}) => large).map(({key}) => key));
   for (const {image, portrait, originalPhotoId, preview, key} of images) {
-    if (image.complete) {
+    if (image.dataset.electionPhoto) {
+      image.addEventListener('error', () => portrait.classList.add('portrait-load-error'), { once: true });
+    } else if (image.complete) {
       if (!image.naturalWidth) portrait.classList.add('portrait-load-error');
     } else {
       image.addEventListener('error', () => portrait.classList.add('portrait-load-error'), { once: true });
@@ -671,7 +673,9 @@ function applyResultCutouts(container) {
     if (!framedPortraits.has(cacheKey)) {
       const task = portraitQueue.then(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
-        return resolveResultPortrait(preview, originalPhotoId, large ? 2400 : 420, large ? 900 : 0);
+        const source = image.dataset.electionPhoto ? await loadCandidatePhoto(preview) : preview;
+        if (!source) return {src: '', transparentTop: false};
+        return resolveResultPortrait(source, originalPhotoId, large ? 2400 : 420, large ? 900 : 0);
       }).catch(() => ({src: preview, transparentTop: false}));
       framedPortraits.set(cacheKey, task);
       portraitQueue = task;

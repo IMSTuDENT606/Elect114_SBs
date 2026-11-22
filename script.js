@@ -534,12 +534,41 @@ async function submitVote() {
   }
 }
 
+const candidatePhotoRequests = new Map();
+
+function loadCandidatePhoto(url) {
+  if (!candidatePhotoRequests.has(url)) {
+    const request = fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      .then(async (response) => {
+        if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) {
+          throw new Error('Candidate photo unavailable');
+        }
+        return URL.createObjectURL(await response.blob());
+      })
+      .catch(() => {
+        candidatePhotoRequests.delete(url);
+        return '';
+      });
+    candidatePhotoRequests.set(url, request);
+  }
+  return candidatePhotoRequests.get(url);
+}
+
 function candidatePhoto(candidate) {
   if (candidate.photoURL) {
     try {
       const photo = candidate.photoURL;
       const localPath = /^\/api\/photos\/\d+\/\d+\/[a-f0-9-]{36}$/.test(photo);
       const url = new URL(localPath ? electionAPIURL(photo) : photo);
+      if (localPath && /\.ngrok-free\.(dev|app)$/.test(url.hostname)) {
+        void loadCandidatePhoto(url.href).then((source) => {
+          if (!source) return;
+          for (const image of document.querySelectorAll('img[data-election-photo]')) {
+            if (image.dataset.electionPhoto === url.href && !image.hasAttribute('src')) image.src = source;
+          }
+        });
+        return `<img class="candidate-portrait" data-election-photo="${escapeHTML(url.href)}" alt="" decoding="async">`;
+      }
       if (localPath || url.origin === 'https://firebasestorage.googleapis.com') {
         return `<img class="candidate-portrait" src="${escapeHTML(url.href)}" alt="" decoding="async">`;
       }
