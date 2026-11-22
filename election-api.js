@@ -18,7 +18,7 @@ function electionAPIURL(pathname) {
 
 async function electionRequest(pathname, { data, file, admin = false } = {}) {
   const url = electionAPIURL(pathname);
-  const headers = {};
+  const headers = { 'ngrok-skip-browser-warning': 'true' };
   if (admin) {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('กรุณาเข้าสู่ระบบผู้ดูแลอีกครั้ง');
@@ -50,7 +50,7 @@ async function watchAdminParticipation(signal, receive, disconnected) {
       const token = await auth.currentUser?.getIdToken();
       if (!token || signal.aborted) return;
       const response = await fetch(electionAPIURL('/api/admin/participation'), {
-        headers: { Authorization: `Bearer ${token}` }, signal, cache: 'no-store'
+        headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }, signal, cache: 'no-store'
       });
       if (response.status === 401 || response.status === 403) {
         disconnected('กรุณาเข้าสู่ระบบผู้ดูแลใหม่');
