@@ -110,7 +110,7 @@ const manageElection = adminElection(getDatabase, voterSecret, (url, roundId, ca
 const assets = new Set([
   '/index.html', '/vote.html', '/styles.css', '/admin.css', '/election.css', '/results.css',
   '/script.js', '/results.js', '/firebase-config.js', '/cloud-admin.js', '/election-api.js', '/server-config.js',
-  '/background-music.js', '/background-music.css', '/background-music.mp3'
+  '/background-music.js', '/background-music.css', '/background-music.mp3', '/results-opening.mp3'
 ]);
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',

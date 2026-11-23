@@ -292,6 +292,7 @@ function renderResultsDashboard(container, votes = [], aggregate) {
   } else {
     container.innerHTML = dashboardMarkup;
   }
+  playResultsOpeningAudio(container);
   const view = container.querySelector('#resultsView');
   const dashboard = container.querySelector('.results-dashboard');
   const motionToggle = dashboard.querySelector('.results-motion-toggle');
@@ -380,6 +381,7 @@ function animateResultsOpening(container, aggregate) {
   curtain.setAttribute('aria-hidden', 'true');
   curtain.innerHTML = `${zodiacWheel()}<div class="zodiac-reveal-title"><span>ผลการเลือกตั้งประธานรุ่น</span><strong>114</strong></div>`;
   container.append(curtain);
+  playResultsOpeningAudio(container);
   curtain.addEventListener('animationend', (event) => {
     if (event.target !== curtain) return;
     if (!landslide) {
@@ -395,6 +397,40 @@ function animateResultsOpening(container, aggregate) {
     landslide = undefined;
     curtain.classList.add('landslide-reveal');
   });
+}
+
+let stopResultsOpeningAudio;
+
+function playResultsOpeningAudio(container) {
+  if (stopResultsOpeningAudio) return;
+  const audio = document.querySelector('#resultsOpeningAudio');
+  if (!audio) return;
+  audio.volume = 0.25;
+  audio.currentTime = 0;
+
+  const observer = new MutationObserver(() => {
+    if (!container.querySelector('.results-reveal, .results-dashboard')) stopAudio();
+  });
+  function stopAudio() {
+    observer.disconnect();
+    container.removeEventListener('click', playAudio);
+    window.removeEventListener('pagehide', stopAudio);
+    audio.pause();
+    stopResultsOpeningAudio = undefined;
+  }
+  stopResultsOpeningAudio = stopAudio;
+  window.addEventListener('pagehide', stopAudio);
+  observer.observe(container, { childList: true });
+
+  // Retry on a tap anywhere in the results if the browser requires a user gesture.
+  function playAudio() {
+    void audio.play().catch((error) => {
+      if (error.name === 'NotAllowedError' && stopResultsOpeningAudio === stopAudio) {
+        container.addEventListener('click', playAudio, { once: true });
+      }
+    });
+  }
+  playAudio();
 }
 
 let portraitSegmenter;
