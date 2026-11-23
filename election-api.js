@@ -16,7 +16,7 @@ function electionAPIURL(pathname) {
   return url.href;
 }
 
-async function electionRequest(pathname, { data, file, admin = false } = {}) {
+async function electionRequest(pathname, { data, file, admin = false, signal } = {}) {
   const url = electionAPIURL(pathname);
   const headers = { 'ngrok-skip-browser-warning': 'true' };
   if (admin) {
@@ -31,7 +31,7 @@ async function electionRequest(pathname, { data, file, admin = false } = {}) {
     response = await fetch(url, {
       method: data || file ? 'POST' : 'GET', headers,
       body: file ?? (data ? JSON.stringify(data) : undefined),
-      cache: 'no-store'
+      cache: 'no-store', signal
     });
   } catch {
     throw Object.assign(new Error('เชื่อมต่อเซิร์ฟเวอร์เลือกตั้งไม่ได้'), { code: 'functions/unavailable' });
@@ -42,6 +42,20 @@ async function electionRequest(pathname, { data, file, admin = false } = {}) {
     throw Object.assign(new Error(payload.message ?? 'ระบบเลือกตั้งตอบกลับไม่สำเร็จ'), { code: `functions/${code}` });
   }
   return payload;
+}
+
+async function sendBallot(data) {
+  const retryable = new Set(['functions/unavailable', 'functions/aborted', 'functions/internal']);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const receipt = await electionRequest('/api/castVote', { data, signal: AbortSignal.timeout(15000) });
+      if (receipt.success === true) return;
+      throw Object.assign(new Error('Ballot response missing'), { code: 'functions/unavailable' });
+    } catch (error) {
+      if (attempt === 2 || !retryable.has(error.code)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1) + Math.random() * 400));
+    }
+  }
 }
 
 async function watchAdminParticipation(signal, receive, disconnected) {

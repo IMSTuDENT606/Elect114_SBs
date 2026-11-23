@@ -503,8 +503,7 @@ async function submitVote() {
   button.disabled = true;
   let confirmedNow = false;
   try {
-    const result = await electionRequest('/api/castVote', { data: { votingToken, roundId, candidateId: selectedCandidate } });
-    if (result.success !== true) throw new Error('Ballot not recorded');
+    await sendBallot({ votingToken, roundId, candidateId: selectedCandidate });
     confirmedNow = true;
   } catch (failure) {
     if (failure.code !== 'functions/already-exists') {

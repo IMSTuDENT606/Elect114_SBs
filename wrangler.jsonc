@@ -1,0 +1,19 @@
+{
+	"name": "elect114-api",
+	"main": "worker.mjs",
+	"compatibility_date": "2026-11-22",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"alias": {
+		"firebase-functions/v2/https": "./worker-compat.cjs",
+		"firebase-admin/app": "./worker-compat.cjs"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "elect114_sbs",
+			"database_id": "ed7c80f4-a8c6-431d-af65-82c018bb6d14"
+		}
+	]
+}
