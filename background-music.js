@@ -3,7 +3,7 @@
   const toggle = document.querySelector('#backgroundMusicToggle');
   const electionContent = document.querySelector('#electionContent');
   let musicOff = false;
-  audio.volume = 0.25;
+  audio.volume = 0.125;
 
   function tryPlay() {
     if (!toggle.hidden && !musicOff && audio.paused) {
