@@ -10,10 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Chonburi&family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@400;700&family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="election.css?v=13">
-  <link rel="stylesheet" href="results.css?v=39">
+  <link rel="stylesheet" href="results.css?v=40">
   <link rel="stylesheet" href="background-music.css">
-  <script src="background-music.js?v=3" defer></script>
-  <script src="results.js?v=33" defer></script>
+  <script src="background-music.js?v=4" defer></script>
+  <script src="results.js?v=34" defer></script>
   <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-auth-compat.js" defer></script>
   <script src="firebase-config.js" defer></script>
@@ -24,7 +24,7 @@
 <body class="voting-page">
   <button type="button" id="backgroundMusicToggle" hidden>♪ เปิดเพลง</button>
   <audio id="backgroundMusic" src="background-music.mp3" preload="none" loop></audio>
-  <audio id="resultsOpeningAudio" src="results-opening.mp3" preload="none" loop></audio>
+  <audio id="resultsOpeningAudio" src="results-opening.mp3" preload="metadata" loop></audio>
   <div class="starfield" aria-hidden="true"></div>
   <nav class="topbar" aria-label="เมนูหลัก">
     <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">☾</span><span>ORACLE <small>THE ELECTION · 2569</small></span></a>

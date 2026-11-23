@@ -282,6 +282,7 @@ function renderResultsDashboard(container, votes = [], aggregate) {
         <div class="results-track" aria-hidden="true"><i style="width:${Math.min(turnout, 100)}%"></i></div></div>
       <a class="results-back" href="index.html#results">กลับไปยังแดชบอร์ด</a>
       <button type="button" class="results-motion-toggle" aria-pressed="${motionEnabled}">เอฟเฟกต์เคลื่อนไหว</button>
+      <button type="button" class="results-motion-toggle results-audio-start">♪ เปิดเพลงประกาศผล</button>
     </aside>
     <div class="results-view" id="resultsView"></div>
   </div>`;
@@ -380,8 +381,17 @@ function animateResultsOpening(container, aggregate) {
   curtain.className = landslide ? 'results-reveal has-landslide' : 'results-reveal';
   curtain.setAttribute('aria-hidden', 'true');
   curtain.innerHTML = `${zodiacWheel()}<div class="zodiac-reveal-title"><span>ผลการเลือกตั้งประธานรุ่น</span><strong>114</strong></div>`;
+  const audioReady = playResultsOpeningAudio(container);
+  if (audioReady) curtain.classList.add('results-reveal-awaiting-audio');
   container.append(curtain);
-  playResultsOpeningAudio(container);
+  if (audioReady) {
+    const startReveal = () => curtain.classList.remove('results-reveal-awaiting-audio');
+    const timeout = window.setTimeout(startReveal, 900);
+    void audioReady.finally(() => {
+      window.clearTimeout(timeout);
+      startReveal();
+    });
+  }
   curtain.addEventListener('animationend', (event) => {
     if (event.target !== curtain) return;
     if (!landslide) {
@@ -400,9 +410,10 @@ function animateResultsOpening(container, aggregate) {
 }
 
 let stopResultsOpeningAudio;
+let resultsAudioReady;
 
 function playResultsOpeningAudio(container) {
-  if (stopResultsOpeningAudio) return;
+  if (stopResultsOpeningAudio) return resultsAudioReady;
   const audio = document.querySelector('#resultsOpeningAudio');
   if (!audio) return;
   audio.volume = 0.25;
@@ -416,6 +427,8 @@ function playResultsOpeningAudio(container) {
     container.removeEventListener('click', playAudio);
     window.removeEventListener('pagehide', stopAudio);
     audio.pause();
+    delete container.dataset.resultsAudioBlocked;
+    resultsAudioReady = undefined;
     stopResultsOpeningAudio = undefined;
   }
   stopResultsOpeningAudio = stopAudio;
@@ -424,13 +437,17 @@ function playResultsOpeningAudio(container) {
 
   // Retry on a tap anywhere in the results if the browser requires a user gesture.
   function playAudio() {
-    void audio.play().catch((error) => {
+    return audio.play().then(() => {
+      if (stopResultsOpeningAudio === stopAudio) delete container.dataset.resultsAudioBlocked;
+    }).catch((error) => {
       if (error.name === 'NotAllowedError' && stopResultsOpeningAudio === stopAudio) {
+        container.dataset.resultsAudioBlocked = 'true';
         container.addEventListener('click', playAudio, { once: true });
       }
     });
   }
-  playAudio();
+  resultsAudioReady = playAudio();
+  return resultsAudioReady;
 }
 
 let portraitSegmenter;
