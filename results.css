@@ -955,8 +955,8 @@
 .room-detail-row > span:not(.ranking-constellation) { display: grid; overflow-wrap: anywhere; }
 .room-detail-row strong { white-space: nowrap; }
 .results-page:has(.results-reveal) .voting-main { z-index: 11; }
-.election-content:not([data-results-audio-blocked]) .results-audio-start { display: none; }
-.election-content[data-results-audio-blocked] .results-audio-start { display: inline-flex; }
+.election-content .results-audio-start { display: inline-flex; min-height: 44px; }
+.election-content[data-results-audio-playing] .results-audio-start { display: none; }
 .election-content .results-reveal-awaiting-audio.results-reveal,
 .election-content .results-reveal-awaiting-audio.results-reveal *,
 .election-content .results-reveal-awaiting-audio.results-reveal::before,

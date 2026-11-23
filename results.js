@@ -422,28 +422,43 @@ function playResultsOpeningAudio(container) {
   const observer = new MutationObserver(() => {
     if (!container.querySelector('.results-reveal, .results-dashboard')) stopAudio();
   });
+  function showAudioButton() {
+    delete container.dataset.resultsAudioPlaying;
+  }
+  function hideAudioButton() {
+    container.dataset.resultsAudioPlaying = 'true';
+  }
+  function handleAudioClick(event) {
+    if (event.target.closest('.results-audio-start')) void playAudio();
+  }
+  function resumeVisibleAudio() {
+    if (!document.hidden && audio.paused) void playAudio();
+  }
   function stopAudio() {
     observer.disconnect();
-    container.removeEventListener('click', playAudio);
+    container.removeEventListener('click', handleAudioClick);
+    document.removeEventListener('visibilitychange', resumeVisibleAudio);
+    audio.removeEventListener('playing', hideAudioButton);
+    audio.removeEventListener('pause', showAudioButton);
+    audio.removeEventListener('error', showAudioButton);
     window.removeEventListener('pagehide', stopAudio);
     audio.pause();
-    delete container.dataset.resultsAudioBlocked;
+    showAudioButton();
     resultsAudioReady = undefined;
     stopResultsOpeningAudio = undefined;
   }
   stopResultsOpeningAudio = stopAudio;
   window.addEventListener('pagehide', stopAudio);
+  container.addEventListener('click', handleAudioClick);
+  document.addEventListener('visibilitychange', resumeVisibleAudio);
+  audio.addEventListener('playing', hideAudioButton);
+  audio.addEventListener('pause', showAudioButton);
+  audio.addEventListener('error', showAudioButton);
   observer.observe(container, { childList: true });
 
-  // Retry on a tap anywhere in the results if the browser requires a user gesture.
   function playAudio() {
-    return audio.play().then(() => {
-      if (stopResultsOpeningAudio === stopAudio) delete container.dataset.resultsAudioBlocked;
-    }).catch((error) => {
-      if (error.name === 'NotAllowedError' && stopResultsOpeningAudio === stopAudio) {
-        container.dataset.resultsAudioBlocked = 'true';
-        container.addEventListener('click', playAudio, { once: true });
-      }
+    return audio.play().catch(() => {
+      if (stopResultsOpeningAudio === stopAudio && audio.paused) showAudioButton();
     });
   }
   resultsAudioReady = playAudio();
