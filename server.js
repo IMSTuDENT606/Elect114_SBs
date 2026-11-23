@@ -109,9 +109,15 @@ const manageElection = adminElection(getDatabase, voterSecret, (url, roundId, ca
 );
 const assets = new Set([
   '/index.html', '/vote.html', '/styles.css', '/admin.css', '/election.css', '/results.css',
-  '/script.js', '/results.js', '/firebase-config.js', '/cloud-admin.js', '/election-api.js', '/server-config.js'
+  '/script.js', '/results.js', '/firebase-config.js', '/cloud-admin.js', '/election-api.js', '/server-config.js',
+  '/background-music.js', '/background-music.css', '/background-music.mp3'
 ]);
-const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+const contentTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.mp3': 'audio/mpeg'
+};
 
 function send(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
@@ -236,7 +242,7 @@ createServer(async (request, response) => {
       const asset = pathname === '/' ? '/index.html' : pathname;
       if (assets.has(asset)) {
         const file = readFileSync(join(__dirname, asset.slice(1)));
-        return response.writeHead(200, { 'Content-Type': `${contentTypes[extname(asset)]}; charset=utf-8`, 'Cache-Control': 'no-cache' }).end(file);
+        return response.writeHead(200, { 'Content-Type': contentTypes[extname(asset)], 'Cache-Control': 'no-cache' }).end(file);
       }
     }
     if (request.method === 'POST') {

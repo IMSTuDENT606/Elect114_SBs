@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="election.css?v=13">
   <link rel="stylesheet" href="results.css?v=39">
+  <link rel="stylesheet" href="background-music.css">
+  <script src="background-music.js?v=2" defer></script>
   <script src="results.js?v=30" defer></script>
   <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/13.4.0/firebase-auth-compat.js" defer></script>
@@ -20,6 +22,8 @@
   <script src="script.js?v=40" defer></script>
 </head>
 <body class="voting-page">
+  <button type="button" id="backgroundMusicToggle" hidden>♪ เปิดเพลง</button>
+  <audio id="backgroundMusic" src="background-music.mp3" preload="none" loop></audio>
   <div class="starfield" aria-hidden="true"></div>
   <nav class="topbar" aria-label="เมนูหลัก">
     <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">☾</span><span>ORACLE <small>THE ELECTION · 2569</small></span></a>

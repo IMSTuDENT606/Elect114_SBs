@@ -1,0 +1,19 @@
+#backgroundMusicToggle {
+  position: fixed;
+  z-index: 11;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--night);
+  color: var(--gold-bright);
+  font: 400 14px Kanit, sans-serif;
+  cursor: pointer;
+}
+
+#backgroundMusicToggle:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+}
