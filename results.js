@@ -592,6 +592,26 @@ async function loadResultPhoto(source) {
   return photo;
 }
 
+function softenStudioEdge({width, height, data}) {
+  const alpha = new Uint8Array(width * height);
+  for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = y * width + x;
+      const neighbors = alpha[i - 1] + alpha[i + 1] + alpha[i - width] + alpha[i + width];
+      data[i * 4 + 3] = Math.min(alpha[i], Math.round((alpha[i] * 2 + neighbors) / 6));
+    }
+  }
+}
+
+function portraitMaskSamples(length, maskLength) {
+  return Array.from({length}, (_, i) => {
+    const position = Math.max(0, Math.min(maskLength - 1, (i + .5) * maskLength / length - .5));
+    const start = Math.floor(position);
+    return {start, end: Math.min(start + 1, maskLength - 1), weight: position - start};
+  });
+}
+
 async function segmentResultPortrait(source, maxSize) {
   const photo = await loadResultPhoto(source);
   const canvas = document.createElement('canvas');
@@ -608,6 +628,7 @@ async function segmentResultPortrait(source, maxSize) {
   }
   if (transparent >= canvas.width * canvas.height * .08) return source;
   if (removeStudioBackdrop(pixels)) {
+    softenStudioEdge(pixels);
     context.putImageData(pixels, 0, 0);
     return canvas.toDataURL('image/png');
   }
@@ -617,9 +638,11 @@ async function segmentResultPortrait(source, maxSize) {
     maskCanvas.width = Math.max(1, Math.round(canvas.width * scale));
     maskCanvas.height = Math.max(1, Math.round(canvas.height * scale));
     const mask = maskCanvas.getContext('2d');
+    mask.imageSmoothingQuality = 'high';
     mask.drawImage(canvas, 0, 0, maskCanvas.width, maskCanvas.height);
     const pixels = mask.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
     if (removeStudioBackdrop(pixels)) {
+      softenStudioEdge(pixels);
       mask.putImageData(pixels, 0, 0);
       context.globalCompositeOperation = 'destination-in';
       context.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
@@ -643,12 +666,20 @@ async function segmentResultPortrait(source, maxSize) {
     if (!mask) return;
     const foreground = mask.getAsFloat32Array();
     const {width, height} = canvas;
+    const columns = portraitMaskSamples(width, mask.width);
+    const rows = portraitMaskSamples(height, mask.height);
     let visible = 0;
     for (let y = 0; y < height; y++) {
-      const row = Math.floor(y * mask.height / height) * mask.width;
+      const {start, end, weight} = rows[y];
+      const top = start * mask.width;
+      const bottom = end * mask.width;
       for (let x = 0; x < width; x++) {
-        const confidence = foreground[row + Math.floor(x * mask.width / width)];
-        const alpha = Math.round(255 * Math.min(1, Math.max(0, (confidence - 0.25) / 0.5)));
+        const col = columns[x];
+        const upper = foreground[top + col.start] * (1 - col.weight) + foreground[top + col.end] * col.weight;
+        const lower = foreground[bottom + col.start] * (1 - col.weight) + foreground[bottom + col.end] * col.weight;
+        const confidence = upper * (1 - weight) + lower * weight;
+        const edge = Math.min(1, Math.max(0, (confidence - .32) / .46));
+        const alpha = Math.round(255 * edge * edge * (3 - 2 * edge));
         const index = (y * width + x) * 4 + 3;
         pixels.data[index] = Math.min(pixels.data[index], alpha);
         if (alpha > 127) visible++;
@@ -665,7 +696,7 @@ async function resolveResultPortrait(preview, originalPhotoId, maxSize, minSize)
   const cacheKey = originalPhotoId && minSize ? portraitCutoutKey(originalPhotoId) : '';
   if (cacheKey) {
     const cached = await portraitStorage('readonly', (store) => store.get(cacheKey)).catch(() => null);
-    if (cached?.hasTransparency && cached.src?.startsWith('data:image/png;base64,')) return cached;
+    if (cached?.version === 2 && cached.hasTransparency && cached.src?.startsWith('data:image/png;base64,')) return cached;
   }
   let file = originalPhotoId
     ? await portraitStorage('readonly', (store) => store.get(originalPhotoId)).catch(() => null)
@@ -681,7 +712,7 @@ async function resolveResultPortrait(preview, originalPhotoId, maxSize, minSize)
     .catch(() => ({src: cutout, transparentTop: false}));
   if (file && (framed.src !== source || !framed.hasTransparency)) URL.revokeObjectURL(source);
   if (cacheKey && framed.hasTransparency && framed.src.startsWith('data:image/png;base64,')) {
-    void portraitStorage('readwrite', (store) => store.put(framed, cacheKey)).catch(() => {});
+    void portraitStorage('readwrite', (store) => store.put({...framed, version: 2}, cacheKey)).catch(() => {});
   }
   return framed;
 }
@@ -727,7 +758,7 @@ async function frameResultPortrait(source, maxSize, minSize) {
   const transparentTop = [0, 1, 2, 3, 4].filter((part) =>
     pixels.data[Math.round(part * (input.width - 1) / 4) * 4 + 3] < 32).length >= 3;
   const scale = Math.max(1, minSize / Math.max(width, height));
-  if (factor === 1 && scale === 1 && width === input.width && height === input.height) return {src: source, transparentTop, hasTransparency};
+  if (!hasTransparency) return {src: source, transparentTop, hasTransparency};
 
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
@@ -735,24 +766,22 @@ async function frameResultPortrait(source, maxSize, minSize) {
   const context = canvas.getContext('2d');
   context.imageSmoothingQuality = 'high';
   context.drawImage(input, x, y, width, height, 0, 0, canvas.width, canvas.height);
-  if (scale > 1) {
-    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-    const original = new Uint8ClampedArray(pixels.data);
-    const stride = canvas.width * 4;
-    for (let row = 1; row < canvas.height - 1; row++) {
-      for (let col = 1; col < canvas.width - 1; col++) {
-        const index = row * stride + col * 4;
-        if (original[index + 3] < 250 || original[index - 1] < 250 || original[index + 7] < 250 ||
-            original[index - stride + 3] < 250 || original[index + stride + 3] < 250) continue;
-        for (let channel = 0; channel < 3; channel++) {
-          const i = index + channel;
-          const average = (original[i - 4] + original[i + 4] + original[i - stride] + original[i + stride]) / 4;
-          pixels.data[i] = original[i] + Math.max(-12, Math.min(12, (original[i] - average) * .5));
-        }
+  const output = context.getImageData(0, 0, canvas.width, canvas.height);
+  const original = new Uint8ClampedArray(output.data);
+  const stride = canvas.width * 4;
+  for (let row = 1; row < canvas.height - 1; row++) {
+    for (let col = 1; col < canvas.width - 1; col++) {
+      const index = row * stride + col * 4;
+      if (original[index + 3] < 250 || original[index - 1] < 250 || original[index + 7] < 250 ||
+          original[index - stride + 3] < 250 || original[index + stride + 3] < 250) continue;
+      for (let channel = 0; channel < 3; channel++) {
+        const i = index + channel;
+        const average = (original[i - 4] + original[i + 4] + original[i - stride] + original[i + stride]) / 4;
+        output.data[i] = original[i] + Math.max(-14, Math.min(14, (original[i] - average) * .65));
       }
     }
-    context.putImageData(pixels, 0, 0);
   }
+  context.putImageData(output, 0, 0);
   return {src: canvas.toDataURL('image/png'), transparentTop, hasTransparency};
 }
 
