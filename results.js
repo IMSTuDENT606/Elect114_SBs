@@ -416,18 +416,23 @@ function playResultsOpeningAudio(container) {
     delete container.dataset.resultsAudioPlaying;
   }
   function hideAudioButton() {
+    if (document.hidden) {
+      audio.pause();
+      return;
+    }
     container.dataset.resultsAudioPlaying = 'true';
   }
   function handleAudioClick(event) {
     if (event.target.closest('.results-audio-start')) void playAudio();
   }
-  function resumeVisibleAudio() {
-    if (!document.hidden && audio.paused) void playAudio();
+  function syncVisibleAudio() {
+    if (document.hidden) audio.pause();
+    else void playAudio();
   }
   function stopAudio() {
     observer.disconnect();
     container.removeEventListener('click', handleAudioClick);
-    document.removeEventListener('visibilitychange', resumeVisibleAudio);
+    document.removeEventListener('visibilitychange', syncVisibleAudio);
     audio.removeEventListener('playing', hideAudioButton);
     audio.removeEventListener('pause', showAudioButton);
     audio.removeEventListener('error', showAudioButton);
@@ -439,14 +444,15 @@ function playResultsOpeningAudio(container) {
   stopResultsOpeningAudio = stopAudio;
   window.addEventListener('pagehide', stopAudio);
   container.addEventListener('click', handleAudioClick);
-  document.addEventListener('visibilitychange', resumeVisibleAudio);
+  document.addEventListener('visibilitychange', syncVisibleAudio);
   audio.addEventListener('playing', hideAudioButton);
   audio.addEventListener('pause', showAudioButton);
   audio.addEventListener('error', showAudioButton);
   observer.observe(container, { childList: true });
 
-  function playAudio() {
-    return audio.play().catch(() => {
+  async function playAudio() {
+    if (document.hidden || !audio.paused) return;
+    await audio.play().catch(() => {
       if (stopResultsOpeningAudio === stopAudio && audio.paused) showAudioButton();
     });
   }

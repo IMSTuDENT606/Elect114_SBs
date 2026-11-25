@@ -6,6 +6,7 @@
   const votingPage = new URL('vote.html', location.href);
   let musicOff = false;
   let enteringVotingPage = false;
+  let pageActive = true;
   audio.volume = 0.125;
 
   if (electionContent) {
@@ -23,7 +24,7 @@
   }
 
   function tryPlay() {
-    if (!toggle.hidden && !musicOff && audio.paused) {
+    if (pageActive && !document.hidden && !toggle.hidden && !musicOff && audio.paused) {
       void audio.play().catch(updateLabel);
     }
   }
@@ -40,6 +41,9 @@
   }
 
   audio.addEventListener('play', updateLabel);
+  audio.addEventListener('playing', () => {
+    if (!pageActive || document.hidden || toggle.hidden || musicOff) audio.pause();
+  });
   audio.addEventListener('pause', updateLabel);
   toggle.addEventListener('click', () => {
     if (toggle.hidden) return;
@@ -60,6 +64,7 @@
     new MutationObserver(() => syncAvailability()).observe(electionContent, { childList: true });
   }
   window.addEventListener('pagehide', () => {
+    pageActive = false;
     if (enteringVotingPage) {
       try {
         sessionStorage.setItem(handoffKey, JSON.stringify({ time: audio.currentTime, off: musicOff }));
@@ -70,8 +75,13 @@
     }
     audio.pause();
   });
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) syncAvailability(true);
+  window.addEventListener('pageshow', () => {
+    pageActive = true;
+    syncAvailability(true);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) audio.pause();
+    else syncAvailability(true);
   });
   syncAvailability();
 })();
