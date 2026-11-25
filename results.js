@@ -638,7 +638,8 @@ async function segmentResultPortrait(source, maxSize) {
   const segmenter = await portraitSegmenter;
   let cutout = source;
   segmenter.segment(canvas, (result) => {
-    const mask = result.confidenceMasks?.[1];
+    // The binary Selfie Segmenter returns one foreground confidence mask.
+    const mask = result.confidenceMasks?.[0];
     if (!mask) return;
     const foreground = mask.getAsFloat32Array();
     const {width, height} = canvas;
