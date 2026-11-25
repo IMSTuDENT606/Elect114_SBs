@@ -612,6 +612,49 @@ function portraitMaskSamples(length, maskLength) {
   });
 }
 
+function refinePortraitEdge({width, height, data}) {
+  const original = new Uint8ClampedArray(data);
+  const radius = Math.max(2, Math.min(5, Math.round(Math.max(width, height) / 320)));
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = (y * width + x) * 4;
+      const alpha = original[index + 3];
+      if (alpha === 0 || alpha === 255) continue;
+      let weightedAlpha = alpha;
+      let totalWeight = 1;
+      let foreground = -1;
+      let nearest = Infinity;
+      for (let dy = -radius; dy <= radius; dy++) {
+        if (y + dy < 0 || y + dy >= height) continue;
+        for (let dx = -radius; dx <= radius; dx++) {
+          const distance = dx * dx + dy * dy;
+          if (!distance || distance > radius * radius || x + dx < 0 || x + dx >= width) continue;
+          const sample = ((y + dy) * width + x + dx) * 4;
+          const colorDistance = Math.abs(original[sample] - original[index]) +
+            Math.abs(original[sample + 1] - original[index + 1]) +
+            Math.abs(original[sample + 2] - original[index + 2]);
+          const weight = 1 / ((1 + distance) * (1 + (colorDistance / 36) ** 2));
+          const sampleAlpha = original[sample + 3];
+          weightedAlpha += sampleAlpha * weight;
+          totalWeight += weight;
+          const match = distance + colorDistance / 64;
+          if (sampleAlpha >= 248 && match < nearest) {
+            foreground = sample;
+            nearest = match;
+          }
+        }
+      }
+      const refinedAlpha = weightedAlpha / totalWeight;
+      data[index + 3] = refinedAlpha < 12 ? 0 : refinedAlpha;
+      if (foreground === -1 || refinedAlpha < 12) continue;
+      const blend = (1 - refinedAlpha / 255) * .8;
+      for (let channel = 0; channel < 3; channel++) {
+        data[index + channel] = original[index + channel] * (1 - blend) + original[foreground + channel] * blend;
+      }
+    }
+  }
+}
+
 async function segmentResultPortrait(source, maxSize) {
   const photo = await loadResultPhoto(source);
   const canvas = document.createElement('canvas');
@@ -629,6 +672,7 @@ async function segmentResultPortrait(source, maxSize) {
   if (transparent >= canvas.width * canvas.height * .08) return source;
   if (removeStudioBackdrop(pixels)) {
     softenStudioEdge(pixels);
+    refinePortraitEdge(pixels);
     context.putImageData(pixels, 0, 0);
     return canvas.toDataURL('image/png');
   }
@@ -646,6 +690,9 @@ async function segmentResultPortrait(source, maxSize) {
       mask.putImageData(pixels, 0, 0);
       context.globalCompositeOperation = 'destination-in';
       context.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+      const composited = context.getImageData(0, 0, canvas.width, canvas.height);
+      refinePortraitEdge(composited);
+      context.putImageData(composited, 0, 0);
       return canvas.toDataURL('image/png');
     }
   }
@@ -686,6 +733,7 @@ async function segmentResultPortrait(source, maxSize) {
       }
     }
     if (visible < width * height * 0.02) return;
+    refinePortraitEdge(pixels);
     context.putImageData(pixels, 0, 0);
     cutout = canvas.toDataURL('image/png');
   });
@@ -696,7 +744,7 @@ async function resolveResultPortrait(preview, originalPhotoId, maxSize, minSize)
   const cacheKey = originalPhotoId && minSize ? portraitCutoutKey(originalPhotoId) : '';
   if (cacheKey) {
     const cached = await portraitStorage('readonly', (store) => store.get(cacheKey)).catch(() => null);
-    if (cached?.version === 2 && cached.hasTransparency && cached.src?.startsWith('data:image/png;base64,')) return cached;
+    if (cached?.version === 3 && cached.hasTransparency && cached.src?.startsWith('data:image/png;base64,')) return cached;
   }
   let file = originalPhotoId
     ? await portraitStorage('readonly', (store) => store.get(originalPhotoId)).catch(() => null)
@@ -712,7 +760,7 @@ async function resolveResultPortrait(preview, originalPhotoId, maxSize, minSize)
     .catch(() => ({src: cutout, transparentTop: false}));
   if (file && (framed.src !== source || !framed.hasTransparency)) URL.revokeObjectURL(source);
   if (cacheKey && framed.hasTransparency && framed.src.startsWith('data:image/png;base64,')) {
-    void portraitStorage('readwrite', (store) => store.put({...framed, version: 2}, cacheKey)).catch(() => {});
+    void portraitStorage('readwrite', (store) => store.put({...framed, version: 3}, cacheKey)).catch(() => {});
   }
   return framed;
 }
@@ -769,15 +817,22 @@ async function frameResultPortrait(source, maxSize, minSize) {
   const output = context.getImageData(0, 0, canvas.width, canvas.height);
   const original = new Uint8ClampedArray(output.data);
   const stride = canvas.width * 4;
-  for (let row = 1; row < canvas.height - 1; row++) {
-    for (let col = 1; col < canvas.width - 1; col++) {
+  const reach = Math.max(canvas.width, canvas.height) >= 600 ? 2 : 1;
+  const vertical = stride * reach;
+  const horizontal = 4 * reach;
+  for (let row = reach; row < canvas.height - reach; row++) {
+    for (let col = reach; col < canvas.width - reach; col++) {
       const index = row * stride + col * 4;
       if (original[index + 3] < 250 || original[index - 1] < 250 || original[index + 7] < 250 ||
-          original[index - stride + 3] < 250 || original[index + stride + 3] < 250) continue;
+          original[index - stride + 3] < 250 || original[index + stride + 3] < 250 ||
+          original[index - horizontal + 3] < 250 || original[index + horizontal + 3] < 250 ||
+          original[index - vertical + 3] < 250 || original[index + vertical + 3] < 250) continue;
       for (let channel = 0; channel < 3; channel++) {
         const i = index + channel;
-        const average = (original[i - 4] + original[i + 4] + original[i - stride] + original[i + stride]) / 4;
-        output.data[i] = original[i] + Math.max(-14, Math.min(14, (original[i] - average) * .65));
+        const average = (original[i - horizontal] + original[i + horizontal] +
+          original[i - vertical] + original[i + vertical]) / 4;
+        const detail = original[i] - average;
+        if (Math.abs(detail) > 2) output.data[i] = original[i] + Math.max(-20, Math.min(20, detail * .95));
       }
     }
   }
@@ -808,7 +863,7 @@ function applyResultCutouts(container) {
         await new Promise((resolve) => setTimeout(resolve, 0));
         const source = await candidatePortraitSource(image);
         if (!source) return {src: '', transparentTop: false};
-        return resolveResultPortrait(source, originalPhotoId, large ? 2400 : 420, large ? 900 : 0);
+        return resolveResultPortrait(source, originalPhotoId, large ? 2400 : 720, large ? 900 : 0);
       }).catch(() => ({src: '', transparentTop: false}));
       framedPortraits.set(cacheKey, task);
       portraitQueue = task;
