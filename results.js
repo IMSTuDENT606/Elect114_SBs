@@ -381,10 +381,8 @@ function animateResultsOpening(container, aggregate) {
   curtain.className = landslide ? 'results-reveal has-landslide' : 'results-reveal';
   curtain.setAttribute('aria-hidden', 'true');
   curtain.innerHTML = `${zodiacWheel()}<div class="zodiac-reveal-title"><span>ผลการเลือกตั้งประธานรุ่น</span><strong>114</strong></div>`;
-  const audioReady = playResultsOpeningAudio(container);
-  if (audioReady) curtain.classList.add('results-reveal-awaiting-audio');
+  playResultsOpeningAudio(container);
   container.append(curtain);
-  if (audioReady) waitForResultsRevealAudio(curtain, audioReady);
   curtain.addEventListener('animationend', (event) => {
     if (event.target !== curtain) return;
     if (!landslide) {
@@ -402,46 +400,10 @@ function animateResultsOpening(container, aggregate) {
   });
 }
 
-function waitForResultsRevealAudio(curtain, audioReady) {
-  const audio = document.querySelector('#resultsOpeningAudio');
-  const actions = document.createElement('div');
-  actions.className = 'results-reveal-audio-actions';
-  actions.innerHTML = '<button type="button" class="small-action">♪ เปิดผลพร้อมเสียง</button><button type="button" class="small-action">ดูผลต่อ</button>';
-  const [play, continueButton] = actions.querySelectorAll('button');
-
-  function startReveal() {
-    window.clearTimeout(timeout);
-    audio.removeEventListener('playing', startReveal);
-    actions.remove();
-    curtain.setAttribute('aria-hidden', 'true');
-    curtain.classList.remove('results-reveal-awaiting-audio');
-  }
-  function showActions() {
-    if (!curtain.isConnected || !curtain.classList.contains('results-reveal-awaiting-audio')) return;
-    curtain.removeAttribute('aria-hidden');
-    curtain.append(actions);
-  }
-
-  const timeout = window.setTimeout(showActions, 900);
-  audio.addEventListener('playing', startReveal, { once: true });
-  play.addEventListener('click', () => {
-    void audio.play().then(startReveal, showActions);
-  });
-  continueButton.addEventListener('click', () => {
-    audio.pause();
-    startReveal();
-  });
-  void audioReady.then((playing) => {
-    if (playing) startReveal();
-    else showActions();
-  });
-}
-
 let stopResultsOpeningAudio;
-let resultsAudioReady;
 
 function playResultsOpeningAudio(container) {
-  if (stopResultsOpeningAudio) return resultsAudioReady;
+  if (stopResultsOpeningAudio) return;
   const audio = document.querySelector('#resultsOpeningAudio');
   if (!audio) return;
   audio.volume = 0.25;
@@ -472,7 +434,6 @@ function playResultsOpeningAudio(container) {
     window.removeEventListener('pagehide', stopAudio);
     audio.pause();
     showAudioButton();
-    resultsAudioReady = undefined;
     stopResultsOpeningAudio = undefined;
   }
   stopResultsOpeningAudio = stopAudio;
@@ -485,13 +446,11 @@ function playResultsOpeningAudio(container) {
   observer.observe(container, { childList: true });
 
   function playAudio() {
-    return audio.play().then(() => true, () => {
+    return audio.play().catch(() => {
       if (stopResultsOpeningAudio === stopAudio && audio.paused) showAudioButton();
-      return false;
     });
   }
-  resultsAudioReady = playAudio();
-  return resultsAudioReady;
+  void playAudio();
 }
 
 let portraitSegmenter;

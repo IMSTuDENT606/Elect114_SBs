@@ -958,23 +958,6 @@
 .results-page:has(.results-reveal) .voting-main { z-index: 11; }
 .election-content .results-audio-start { display: inline-flex; min-height: 44px; }
 .election-content[data-results-audio-playing] .results-audio-start { display: none; }
-.results-reveal-audio-actions {
-  position: absolute;
-  z-index: 2;
-  bottom: max(24px, env(safe-area-inset-bottom));
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 16px;
-}
-.results-reveal-audio-actions button { min-height: 44px; }
-.election-content .results-reveal-awaiting-audio.results-reveal,
-.election-content .results-reveal-awaiting-audio.results-reveal *,
-.election-content .results-reveal-awaiting-audio.results-reveal::before,
-.election-content .results-reveal-awaiting-audio.results-reveal::after {
-  animation-play-state: paused;
-}
 .election-content:is(:has(.results-reveal), .results-restoring) .results-dashboard { visibility: hidden; }
 .results-reveal {
   position: fixed;

@@ -19,7 +19,6 @@ const storageKeys = {
   open: 'election2569-open',
   started: 'election2569-started',
   votes: 'election2569-votes',
-  resultsViewed: 'election2569-results-viewed',
   candidates: 'election2569-candidates',
   control: 'election2569-control'
 };
@@ -134,7 +133,6 @@ const voteKey = () => control.roundId === 1 ? storageKeys.votes : `${storageKeys
 let votingSession = null;
 let recordedRound = null;
 let ballotDropRound = null;
-const resultsViewed = () => localStorage.getItem(storageKeys.resultsViewed) === String(control.roundId);
 
 function getElectionPhase(now = Date.now(), state = useCloudRound ? cloudRound : control) {
   if (!state) return 'waiting';
@@ -251,15 +249,14 @@ function renderResultsWaiting(voteRecorded) {
   updateCountdown();
 }
 
-function openElectionResults() {
-  if (getElectionPhase() !== 'published') return;
-  if (!resultsViewed()) localStorage.setItem(storageKeys.resultsViewed, String(control.roundId));
-  renderElection();
-  if (!useCloudRound) animateResultsOpening(electionContent);
-}
-
 let resultsRequest = 0;
 let revealedResultsRound = null;
+
+function revealElectionResults(aggregate) {
+  if (revealedResultsRound === control.roundId) return;
+  revealedResultsRound = control.roundId;
+  animateResultsOpening(electionContent, aggregate);
+}
 
 async function renderCloudResults() {
   const request = ++resultsRequest;
@@ -270,10 +267,7 @@ async function renderCloudResults() {
     const result = await electionRequest('/api/results');
     if (request !== resultsRequest || result.roundId !== roundId || control.roundId !== roundId || getElectionPhase() !== 'published') return;
     renderResultsDashboard(electionContent, [], result);
-    if (revealedResultsRound !== roundId) {
-      revealedResultsRound = roundId;
-      animateResultsOpening(electionContent, result);
-    }
+    revealElectionResults(result);
   } catch {
     if (request === resultsRequest && !dashboard && control.roundId === roundId && getElectionPhase() === 'published') {
       electionContent.innerHTML = electionNotice('ผลการเลือกตั้ง', 'โหลดผลคะแนนไม่ได้ กรุณาโหลดหน้าใหม่');
@@ -284,21 +278,17 @@ async function renderCloudResults() {
 function renderElection() {
   if (!electionContent) return;
   if (ballotDropRound === control.roundId) return;
+  if (electionPhase === 'published' && revealedResultsRound === control.roundId &&
+      electionContent.querySelector('.results-reveal')) return;
   resultsRequest++;
   const heading = document.querySelector('.voting-heading h1');
-  document.body.classList.toggle('results-page', electionPhase === 'published' && resultsViewed());
+  document.body.classList.toggle('results-page', electionPhase === 'published');
   heading.textContent = electionPhase === 'published' ? 'ผลการเลือกตั้ง' : 'ใช้สิทธิ์เลือกตั้ง';
   if (electionPhase === 'published') {
-    if (resultsViewed()) {
-      if (useCloudRound) void renderCloudResults();
-      else renderResultsDashboard(electionContent, getVotes());
-    } else {
-      electionContent.innerHTML = `<section class="election-notice election-result">
-        <div class="notice-icon" aria-hidden="true">✦</div>
-        <h3>ประกาศผลแล้ว</h3>
-        <button class="small-action" id="openElectionResults">ดูผลการเลือกตั้ง</button>
-      </section>`;
-      electionContent.querySelector('#openElectionResults').addEventListener('click', openElectionResults);
+    if (useCloudRound) void renderCloudResults();
+    else {
+      renderResultsDashboard(electionContent, getVotes());
+      revealElectionResults();
     }
     return;
   }
@@ -701,8 +691,7 @@ function updateElectionStatus() {
   status.textContent = `ประกาศผลการเลือกตั้งรอบที่ ${round.round} แล้ว`;
   result.innerHTML = cloudReadEnabled
     ? '<div class="waiting-icon" aria-hidden="true">✦</div><h3>ประกาศผลแล้ว</h3><a class="small-action result-vote-link" href="vote.html">ดูผลการเลือกตั้ง</a>'
-    : resultsViewed() ? electionResultsMarkup(votes)
-    : '<div class="waiting-icon" aria-hidden="true">✦</div><h3>กรุณาคลิกดูผลการเลือกตั้งก่อน</h3><p>เปิดผลผ่านปุ่มเลือกตั้ง แล้วคะแนนจะแสดงในแดชบอร์ดนี้</p><a class="small-action result-vote-link" href="#vote">ไปยังปุ่มดูผลการเลือกตั้ง</a>';
+    : electionResultsMarkup(votes);
 }
 
 function electionResultsMarkup(votes) {
@@ -1262,15 +1251,12 @@ function syncElectionPage(force = false) {
     selectedCandidate = null;
   }
   if (force || roundChanged || scheduleChanged || oldPhase !== electionPhase) {
-    const reveal = !roundChanged && electionPhase === 'published' && oldPhase !== 'published'
-      && electionContent?.querySelector('[role="timer"]');
     const oldCandidates = candidates;
     candidates = loadCandidates();
     const keepOpenScreen = !roundChanged && oldPhase === 'open' && electionOpen &&
       !(scheduleChanged && electionContent?.querySelector('.countdown-clock')) &&
       (useCloudRound ? oldCandidates === candidates || electionContent?.querySelector('#loginForm') : scheduleChanged);
-    if (reveal) openElectionResults();
-    else if (!keepOpenScreen) renderElection();
+    if (!keepOpenScreen) renderElection();
     updateCountdown();
     updateElectionStatus();
     const active = document.querySelector('[data-admin-tab].active');
@@ -1289,18 +1275,13 @@ function syncElectionPage(force = false) {
 
 window.addEventListener('storage', (event) => {
   if (event.storageArea !== localStorage) return;
-  if (cloudReadEnabled && event.key !== storageKeys.resultsViewed) return;
+  if (cloudReadEnabled) return;
   if (event.key === storageKeys.rosterChanged) {
     location.reload();
     return;
   }
   if (event.key === null || [storageKeys.candidates, storageKeys.control, storageKeys.open, storageKeys.started].includes(event.key)) {
     syncElectionPage(true);
-  } else if (event.key === storageKeys.resultsViewed) {
-    if (electionPhase === 'published') {
-      renderElection();
-      updateElectionStatus();
-    }
   } else if (event.key === voteKey()) {
     if (electionContent && (electionPhase === 'published' || getVotes().length)) renderElection();
     updateElectionStatus();
@@ -1316,9 +1297,6 @@ window.addEventListener('pageshow', (event) => {
   revealedResultsRound = null;
   electionContent?.querySelector('.results-reveal')?.remove();
   syncElectionPage(true);
-  if (!useCloudRound && electionContent && electionPhase === 'published' && resultsViewed()) {
-    animateResultsOpening(electionContent);
-  }
   electionContent?.classList.remove('results-restoring');
 });
 setInterval(() => {
@@ -1373,6 +1351,5 @@ function readCloudCandidates(value) {
 
 void watchElectionControl();
 
-if (electionContent && electionPhase === 'published') openElectionResults();
-else renderElection();
+renderElection();
 updateElectionStatus();
