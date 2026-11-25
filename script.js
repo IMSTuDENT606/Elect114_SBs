@@ -381,21 +381,25 @@ function renderLogin() {
 
 const galleryPortraits = new Map();
 
-function prepareGalleryPortraits() {
-  for (const image of electionContent.querySelectorAll('.candidate-profile-image img')) {
-    const source = image.src;
-    if (!galleryPortraits.has(source)) {
-      galleryPortraits.set(source, resolveResultPortrait(source, '', 1200, 0).catch(() => null));
+function prepareVotingPortraits(selector) {
+  for (const image of electionContent.querySelectorAll(selector)) {
+    const key = image.dataset.electionPhoto || image.src;
+    if (!galleryPortraits.has(key)) {
+      const task = candidatePortraitSource(image)
+        .then((source) => source ? resolveResultPortrait(source, '', 1200, 0) : null)
+        .catch(() => null);
+      galleryPortraits.set(key, task);
     }
-    void galleryPortraits.get(source).then(async (portrait) => {
+    const task = galleryPortraits.get(key);
+    void task.then(async (portrait) => {
       if (!portrait?.hasTransparency) {
-        galleryPortraits.delete(source);
+        if (galleryPortraits.get(key) === task) galleryPortraits.delete(key);
         return;
       }
       if (!image.isConnected) return;
       const decoded = await loadResultPhoto(portrait.src).catch(() => null);
       if (!decoded || !image.isConnected) return;
-      image.closest('.candidate-profile-image').classList.add('has-cutout');
+      image.closest('.candidate-profile-image')?.classList.add('has-cutout');
       image.src = portrait.src;
     });
   }
@@ -428,13 +432,14 @@ function renderCandidates() {
     }).join('')}</div>
     <footer class="candidate-gallery-actions"><button class="primary election-action" id="openBallot" type="button">เข้าสู่คูหา <b aria-hidden="true">→</b></button></footer>
   </section>`;
-  prepareGalleryPortraits();
+  prepareVotingPortraits('.candidate-profile-image img');
   document.querySelector('#openBallot').addEventListener('click', renderBallot);
 }
 
 function renderBallot() {
   selectedCandidate = null;
   electionContent.innerHTML = `<div class="ballot-room"><div class="step-chip">ขั้นตอน 3 จาก 3 · บัตรเลือกตั้ง</div><div class="official-ballot"><div class="ballot-watermark">2569</div><header><span>บัตรเลือกตั้งประธานรุ่น</span><b>เลือกได้เพียงหมายเลขเดียว</b></header>${candidates.map((candidate) => `<button class="ballot-option" type="button" data-candidate="${candidate.no}" aria-pressed="false"><span class="ballot-box" aria-hidden="true"><i class="ink-one"></i><i class="ink-two"></i><span class="animated-pen" aria-hidden="true">&#x2712;&#xFE0E;</span></span><span class="ballot-no">${candidate.no}</span><span class="ballot-name">${candidatePhoto(candidate)}<small>ผู้สมัครหมายเลข ${candidate.no}</small><b>${escapeHTML(candidate.name)}</b><small>${escapeHTML(candidate.team)}</small></span></button>`).join('')}<button class="primary election-action" id="submitVote" type="button">พับบัตรและหย่อนลงหีบ <b>→</b></button><div class="error" id="voteError" aria-live="polite"></div></div></div>`;
+  prepareVotingPortraits('.ballot-name img');
   document.querySelectorAll('.ballot-option').forEach((option) => option.addEventListener('click', () => {
     if (document.querySelector('#submitVote').disabled || selectedCandidate === option.dataset.candidate) return;
     document.querySelectorAll('.ballot-option').forEach((item) => {
@@ -534,6 +539,11 @@ async function submitVote() {
 }
 
 const candidatePhotoRequests = new Map();
+
+async function candidatePortraitSource(image) {
+  const pendingURL = image.dataset.electionPhoto;
+  return pendingURL ? loadCandidatePhoto(pendingURL) : image.src;
+}
 
 function loadCandidatePhoto(url) {
   if (!candidatePhotoRequests.has(url)) {

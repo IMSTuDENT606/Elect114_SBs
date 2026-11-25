@@ -507,6 +507,10 @@ function removeStudioBackdrop({width, height, data}) {
   const matches = (pixel, reference) => {
     if (data[pixel * 4 + 3] < 32) return true;
     const {u, v, light} = readColor(pixel);
+    if (reference.neutral) {
+      return Math.abs(light - reference.light) <= 4
+        && Math.hypot(u - reference.u, v - reference.v) <= 8;
+    }
     const chroma = Math.hypot(u, v);
     const blueStudioTone = reference.u < -12 && reference.v > 8 && u < -12 && v > 8;
     return chroma >= Math.max(17, reference.chroma * .25)
@@ -528,7 +532,9 @@ function removeStudioBackdrop({width, height, data}) {
   for (const pixel of samples) {
     const reference = readColor(pixel);
     reference.chroma = Math.hypot(reference.u, reference.v);
-    if (reference.chroma < 30 || data[pixel * 4 + 3] < 250) continue;
+    // Bright, nearly neutral backdrops also occur in uploaded JPGs and PNGs.
+    reference.neutral = reference.light >= 238 && reference.chroma <= 12;
+    if ((!reference.neutral && reference.chroma < 30) || data[pixel * 4 + 3] < 250) continue;
     const support = edges.map((edge) => edge.filter((sample) => matches(sample, reference)).length);
     const count = support.reduce((sum, value) => sum + value, 0);
     if (count > bestSupport && support.filter((value, index) => value >= edges[index].length * .55).length >= 2) {
@@ -573,7 +579,7 @@ function removeStudioBackdrop({width, height, data}) {
       if (u < -15 && v > 10 && Math.hypot(u, v) >= 27) queue[tail++] = pixel;
     }
   }
-  if (tail < size * .12 || tail > size * .94) return false;
+  if (tail < size * (best.neutral ? .06 : .12) || tail > size * .94) return false;
   for (let index = 0; index < tail; index++) data[queue[index] * 4 + 3] = 0;
   return true;
 }
@@ -754,10 +760,10 @@ function applyResultCutouts(container) {
     const portrait = image.closest('.result-portrait');
     const originalPhotoId = portrait.dataset.originalPhoto;
     const preview = image.dataset.electionPhoto || image.src;
-    return {image, portrait, originalPhotoId, preview, key: originalPhotoId || preview, large: Boolean(portrait.closest('.winner-stage'))};
+    return {image, portrait, originalPhotoId, key: originalPhotoId || preview, large: Boolean(portrait.closest('.winner-stage'))};
   });
   const largePortraits = new Set(images.filter(({large}) => large).map(({key}) => key));
-  for (const {image, portrait, originalPhotoId, preview, key} of images) {
+  for (const {image, portrait, originalPhotoId, key} of images) {
     if (image.dataset.electionPhoto) {
       image.addEventListener('error', () => portrait.classList.add('portrait-load-error'), { once: true });
     } else if (image.complete) {
@@ -770,10 +776,10 @@ function applyResultCutouts(container) {
     if (!framedPortraits.has(cacheKey)) {
       const task = portraitQueue.then(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
-        const source = image.dataset.electionPhoto ? await loadCandidatePhoto(preview) : preview;
+        const source = await candidatePortraitSource(image);
         if (!source) return {src: '', transparentTop: false};
         return resolveResultPortrait(source, originalPhotoId, large ? 2400 : 420, large ? 900 : 0);
-      }).catch(() => ({src: preview, transparentTop: false}));
+      }).catch(() => ({src: '', transparentTop: false}));
       framedPortraits.set(cacheKey, task);
       portraitQueue = task;
     }
