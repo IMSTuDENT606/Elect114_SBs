@@ -339,8 +339,9 @@
 .result-thumbnail.has-cutout .result-thumbnail-frame {
   inset: -34% -20% 0;
   border-radius: 0;
+  /* The narrow top mask lets the head extend above the circular crop. */
   mask:
-    linear-gradient(#000 0 0) center top / 100% 76.5% no-repeat,
+    linear-gradient(#000 0 0) center top / 38% 47% no-repeat,
     radial-gradient(circle closest-side, #000 98.5%, transparent 100%) center bottom / 71.43% 74.63% no-repeat;
 }
 .result-thumbnail.has-cutout img {
