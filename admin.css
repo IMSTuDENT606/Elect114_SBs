@@ -408,6 +408,26 @@
 .admin-settings-card input:not([type="checkbox"]), .admin-settings-card textarea,
 .voter-tools label, .voter-tools select { background: #fff; color: var(--admin-ink); border-color: #d4cadf; }
 .admin-settings-card input[type="checkbox"] { accent-color: var(--admin-accent); }
+
+.participation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.admin-settings-card .participation-filters label {
+  display: grid;
+  flex: 0 1 180px;
+  gap: 4px;
+}
+.participation-filters select {
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--admin-accent);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--admin-ink);
+  font: inherit;
+}
 .voter-tools input { color: var(--admin-ink); }
 .voter-summary b, .admin-history-current strong, .admin-history-number { color: var(--admin-accent); }
 .oracle-admin th { background: #eee8f5; color: #4a3461; }

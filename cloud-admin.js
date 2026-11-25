@@ -29,6 +29,18 @@ function stopAdminParticipation() {
   participationController = null;
 }
 
+const participationOrder = new Intl.Collator('th', { numeric: true });
+const participationRooms = (roster) =>
+  [...new Set(roster.map(({ room }) => room))].sort(participationOrder.compare);
+
+function filteredParticipation(roster, status, room) {
+  return roster.filter((voter) => (!room || voter.room === room) &&
+    (status === 'all' || (status === 'voted' ? voter.voted : voter.eligible && !voter.voted)))
+    .sort((a, b) => participationOrder.compare(a.room, b.room) ||
+      participationOrder.compare(a.number, b.number) ||
+      participationOrder.compare(a.studentId, b.studentId));
+}
+
 function roomParticipationMarkup(roster) {
   const rooms = new Map();
   for (const voter of roster) {
@@ -39,7 +51,7 @@ function roomParticipationMarkup(roster) {
     if (voter.voted) room.voted++;
   }
   const percentage = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2, style: 'percent' });
-  return [...rooms].sort(([a], [b]) => a.localeCompare(b, 'th', { numeric: true }))
+  return [...rooms].sort(([a], [b]) => participationOrder.compare(a, b))
     .map(([room, { eligible, voted }]) => {
       const label = escapeHTML(room);
       if (!eligible) return `<article><h4>${label}</h4><p>ไม่มีผู้มีสิทธิ์ในรอบนี้</p></article>`;
@@ -119,16 +131,20 @@ function renderCloudAdmin(state, tab = 'round', feedback = '') {
     panel.innerHTML = (state.candidateColors ? '' : '<p class="admin-settings-card">ตัวเลือกสีจะใช้งานได้เมื่อเซิร์ฟเวอร์โหลดรุ่นใหม่</p>') +
       candidates.map(editor).join('') + (!started ? editor({}) : '');
   } else if (tab === 'voters') {
-    const rooms = [...new Set(roster.map(({ room }) => room))].sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
+    const rooms = participationRooms(roster);
     panel.innerHTML = `${!started ? `<form class="admin-settings-card" data-action="eligibility"><h3>ห้องที่มีสิทธิ์</h3>
       ${rooms.map((room) => `<label class="admin-room-choice"><input type="checkbox" name="room" value="${escapeHTML(room)}" ${roster.some((voter) => voter.room === room && voter.eligible) ? 'checked' : ''}> ${escapeHTML(room)}</label>`).join('')}
       <button class="admin-main-action">บันทึกสิทธิ์</button></form>
       <form class="admin-settings-card" data-action="roster"><h3>นำเข้าทะเบียน</h3><label>วาง 4 คอลัมน์จาก Excel ตามลำดับ เลขนักเรียน ชื่อ ห้อง และเลขที่<textarea name="rows" rows="6" required></textarea></label>
       <button class="admin-main-action">แทนที่ทะเบียน</button></form>` : ''}
       <section class="admin-settings-card"><h3>รายชื่อผู้มีสิทธิ์</h3>
-      <label>แสดงรายชื่อ <select id="participationFilter"><option value="pending">ยังไม่ใช้สิทธิ์</option><option value="voted">ใช้สิทธิ์แล้ว</option><option value="all">ทะเบียนทั้งหมด</option></select></label>
+      <div class="participation-filters">
+        <label>สถานะ <select id="participationFilter"><option value="pending">ยังไม่ใช้สิทธิ์</option><option value="voted">ใช้สิทธิ์แล้ว</option><option value="all">ทะเบียนทั้งหมด</option></select></label>
+        <label>ห้องเรียน <select id="participationRoom"><option value="">ทุกห้อง</option></select></label>
+      </div>
+      <p id="participationCount" aria-live="polite"></p>
       <div class="voter-table-wrap"><table><thead><tr><th>เลขนักเรียน</th><th>ชื่อ</th><th>ห้อง</th><th>เลขที่</th><th>สถานะ</th></tr></thead><tbody>
-      </tbody></table></div><p id="participationEmpty" hidden>ไม่มีรายชื่อในสถานะนี้</p></section>`;
+      </tbody></table></div><p id="participationEmpty" hidden>ไม่มีรายชื่อตรงกับตัวกรอง</p></section>`;
   } else {
     panel.innerHTML = Object.entries(history).filter(([, entry]) => entry).reverse().map(([id, entry]) => `<details class="admin-settings-card"><summary>รอบที่ ${escapeHTML(id)} · ${formatBangkok(entry.ended)}</summary>
       <ul>${Object.entries(entry.candidates ?? {}).filter(([, item]) => item).map(([no, item]) => `<li>${escapeHTML(item.name)} · ${Number(entry.tallies?.[no]) || 0} คะแนน</li>`).join('')}</ul></details>`).join('') ||
@@ -140,21 +156,37 @@ function renderCloudAdmin(state, tab = 'round', feedback = '') {
   const participationSummary = view.querySelector('#participationSummary');
   const participationConnection = view.querySelector('#participationConnection');
   const participationFilter = view.querySelector('#participationFilter');
+  const participationRoom = view.querySelector('#participationRoom');
   const roomTurnout = view.querySelector('#roomTurnoutGrid');
   let live = state;
+  function updateParticipationRows() {
+    if (!participationFilter) return;
+    const rows = filteredParticipation(live.roster, participationFilter.value, participationRoom.value);
+    panel.querySelector('tbody').innerHTML = rows.map((voter) =>
+      `<tr><td>${escapeHTML(voter.studentId)}</td><td>${escapeHTML(voter.name)}</td><td>${escapeHTML(voter.room)}</td><td>${escapeHTML(voter.number)}</td><td>${voter.voted ? 'ใช้สิทธิ์แล้ว' : voter.eligible ? 'ยังไม่ใช้สิทธิ์' : 'ไม่มีสิทธิ์ในรอบนี้'}</td></tr>`).join('');
+    view.querySelector('#participationCount').textContent = `พบ ${rows.length} คน`;
+    view.querySelector('#participationEmpty').hidden = rows.length > 0;
+  }
   function updateParticipation() {
     const { roster, roundId, eligibleCount, votedCount, pendingCount } = live;
     participationSummary.textContent =
       `รอบที่ ${roundId} · มีสิทธิ์ ${eligibleCount} คน · ใช้สิทธิ์แล้ว ${votedCount} คน · ยังไม่ใช้สิทธิ์ ${pendingCount} คน`;
     if (roomTurnout) roomTurnout.innerHTML = roomParticipationMarkup(roster);
-    if (!participationFilter) return;
-    const filter = participationFilter.value;
-    const rows = roster.filter((voter) => filter === 'all' || (filter === 'voted' ? voter.voted : voter.eligible && !voter.voted));
-    panel.querySelector('tbody').innerHTML = rows.map((voter) =>
-      `<tr><td>${escapeHTML(voter.studentId)}</td><td>${escapeHTML(voter.name)}</td><td>${escapeHTML(voter.room)}</td><td>${escapeHTML(voter.number)}</td><td>${voter.voted ? 'ใช้สิทธิ์แล้ว' : voter.eligible ? 'ยังไม่ใช้สิทธิ์' : 'ไม่มีสิทธิ์ในรอบนี้'}</td></tr>`).join('');
-    view.querySelector('#participationEmpty').hidden = rows.length > 0;
+    if (participationRoom) {
+      const rooms = participationRooms(roster);
+      const currentRooms = Array.from(participationRoom.options).slice(1);
+      if (rooms.length !== currentRooms.length || currentRooms.some((option, i) => option.value !== rooms[i])) {
+        const selectedRoom = participationRoom.value;
+        participationRoom.replaceChildren(new Option('ทุกห้อง', ''), ...rooms.map((room) => new Option(room, room)));
+        if (rooms.includes(selectedRoom)) participationRoom.value = selectedRoom;
+      }
+    }
+    updateParticipationRows();
   }
-  participationFilter?.addEventListener('change', updateParticipation);
+  view.querySelector('.participation-filters')?.addEventListener('change', () => {
+    panel.querySelector('.voter-table-wrap').scrollTop = 0;
+    updateParticipationRows();
+  });
   updateParticipation();
   participationController = new AbortController();
   void watchAdminParticipation(participationController.signal, (snapshot) => {
